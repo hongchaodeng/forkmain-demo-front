@@ -4,7 +4,7 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY . .
 
-RUN yarn install && yarn build
+RUN 
 
 # nginx state for serving content
 FROM nginx:alpine AS runner
@@ -19,7 +19,7 @@ COPY .forkmain/nginx.conf /etc/nginx/nginx.conf
 RUN rm -rf ./*
 
 # Copy static assets over
-COPY --from=builder /app//dist ./
+COPY --from=builder /app/ ./
 
 # Containers run nginx with global directives and daemon off
 CMD ["nginx", "-g", "daemon off;"]
