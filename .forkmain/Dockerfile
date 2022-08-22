@@ -19,7 +19,7 @@ COPY .forkmain/nginx.conf /etc/nginx/nginx.conf
 RUN rm -rf ./*
 
 # Copy static assets over
-COPY --from=builder /app//dist ./
+COPY --from=builder /app/dist ./
 
 # Containers run nginx with global directives and daemon off
 CMD ["nginx", "-g", "daemon off;"]
