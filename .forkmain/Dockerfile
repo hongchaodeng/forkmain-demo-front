@@ -1,8 +1,8 @@
-FROM node:16-alpine AS builder
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
-COPY . .
+FROM node:16 AS builder
+
+WORKDIR /workdir
+
+COPY ./ ./
 
 RUN yarn install && yarn build
 
@@ -12,14 +12,37 @@ FROM nginx:alpine AS runner
 # Set working directory to nginx asset directory
 WORKDIR /usr/share/nginx/html
 
-# Copy nginx config file
-COPY .forkmain/nginx.conf /etc/nginx/nginx.conf
+RUN echo "user  root;\
+worker_processes  2;\
+events {\
+    worker_connections  1024;\
+}\
+http {\
+    include       mime.types;\
+    default_type  application/octet-stream;\
+    gzip  on;\
+    sendfile        on;\
+    keepalive_timeout  65;\
+    server {\
+        listen 3000;\
+        server_name  localhost;\
+        location / {\
+            root   /usr/share/nginx/html;\
+            index  index.html index.htm;\
+            \
+        }\
+        error_page 404 /;\
+        location = /404.html {\
+            root   /usr/share/nginx/html;\
+        }\
+    }\
+}"\
+> /etc/nginx/nginx.conf
 
-# Remove default nginx static assets
 RUN rm -rf ./*
 
-# Copy static assets over
-COPY --from=builder /app//dist ./
+COPY --from=builder /workdir/dist/ ./
 
-# Containers run nginx with global directives and daemon off
+EXPOSE 3000
+
 CMD ["nginx", "-g", "daemon off;"]
